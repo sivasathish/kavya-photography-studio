@@ -16,12 +16,19 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Check if Firebase config is available
+const isConfigured = firebaseConfig.apiKey && firebaseConfig.projectId;
+
+if (!isConfigured) {
+  console.warn('Firebase configuration is missing. Using mock mode.');
+}
+
+// Initialize Firebase only if configured
+const app = isConfigured ? initializeApp(firebaseConfig) : null;
 
 // Initialize Firebase services
-export const db = getFirestore(app);
-export const storage = getStorage(app);
-export const auth = getAuth(app);
+export const db = app ? getFirestore(app) : null;
+export const storage = app ? getStorage(app) : null;
+export const auth = app ? getAuth(app) : null;
 
 export default app;
