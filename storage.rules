@@ -1,0 +1,55 @@
+// Firebase Storage Security Rules
+// Production-safe rules for image uploads
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      // Replace with your admin email addresses
+      return isSignedIn() && 
+             request.auth.token.email in [
+               'admin@kavyaphotography.com',
+               'your-admin-email@example.com'
+             ];
+    }
+    
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isSizeValid() {
+      // Max file size: 10MB
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // Photos folder rules
+    match /photos/{filename} {
+      // Anyone can read photos (for public display)
+      allow read: if true;
+      
+      // Only admins can upload photos
+      // Must be an image and under 10MB
+      allow write: if isAdmin() && isImage() && isSizeValid();
+      
+      // Only admins can delete photos
+      allow delete: if isAdmin();
+    }
+    
+    // Thumbnails folder (if you implement image optimization)
+    match /thumbnails/{filename} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Temp uploads (if needed for processing)
+    match /temp/{userId}/{filename} {
+      allow read, write: if isAdmin() && request.auth.uid == userId;
+    }
+  }
+}

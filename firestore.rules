@@ -1,0 +1,53 @@
+// Firestore Security Rules
+// Production-safe rules with proper authentication and authorization
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      // Replace with your admin email addresses
+      // You can also use custom claims or check against an 'admins' collection
+      return isSignedIn() && 
+             request.auth.token.email in [
+               'admin@kavyaphotography.com',
+               'your-admin-email@example.com'
+             ];
+    }
+    
+    // Photos Collection Rules
+    match /photos/{photoId} {
+      // Anyone can read photos (public gallery)
+      allow read: if true;
+      
+      // Only admins can create, update, or delete photos
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // Bookings Collection Rules
+    match /bookings/{bookingId} {
+      // Anyone can create bookings (public form submission)
+      allow create: if true;
+      
+      // Only admins can read bookings
+      allow read: if isAdmin();
+      
+      // Only admins can update or delete bookings
+      allow update, delete: if isAdmin();
+    }
+    
+    // Optional: Admin Users Collection
+    // Uncomment if you want to manage admins dynamically
+    /*
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Manage through Firebase Console
+    }
+    */
+  }
+}

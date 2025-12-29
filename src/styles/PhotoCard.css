@@ -1,0 +1,112 @@
+/* PhotoCard Styles */
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background-color: var(--bg-light);
+  aspect-ratio: 4/3;
+  cursor: pointer;
+  transition: transform var(--transition-base);
+}
+
+.photo-card:hover {
+  transform: translateY(-5px);
+}
+
+.photo-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.photo-card-image.loading {
+  opacity: 0;
+}
+
+.photo-card-image.loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.photo-card:hover .photo-card-image {
+  transform: scale(1.1);
+}
+
+/* Overlay */
+.photo-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  padding: var(--spacing-md);
+  transform: translateY(100%);
+  transition: transform var(--transition-base);
+}
+
+.photo-card:hover .photo-card-overlay {
+  transform: translateY(0);
+}
+
+.photo-card-title {
+  color: white;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-xs);
+}
+
+.photo-card-category {
+  display: inline-block;
+  background-color: var(--secondary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+/* Skeleton Loader */
+.photo-card-skeleton {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--bg-light) 0%,
+    #e0e0e0 50%,
+    var(--bg-light) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Error State */
+.photo-card-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-light);
+}
+
+.photo-card-error span {
+  font-size: 3rem;
+  opacity: 0.3;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .photo-card-title {
+    font-size: var(--font-size-base);
+  }
+}
