@@ -1,92 +1,94 @@
 // Gallery Page Component - Display all photos with category filter
 import { useState, useEffect } from 'react';
-import { getAllPhotos, getPhotosByCategory } from '../firebase/firestoreService';
 import PhotoCard from '../components/PhotoCard';
 import '../styles/Gallery.css';
 
-// Sample photos data (fallback when Firebase is not configured)
+// LocalStorage key for images
+const IMAGES_STORAGE_KEY = 'kavya_gallery_images';
+
+// Sample photos data (fallback when no images uploaded)
 const SAMPLE_PHOTOS = [
   {
     id: '1',
     title: 'Beautiful Wedding Ceremony',
-    category: 'Wedding',
+    category: 'wedding',
     imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800',
     createdAt: new Date()
   },
   {
     id: '2',
     title: 'Elegant Bride Portrait',
-    category: 'Wedding',
+    category: 'wedding',
     imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800',
     createdAt: new Date()
   },
   {
     id: '3',
     title: 'Couple First Dance',
-    category: 'Wedding',
+    category: 'wedding',
     imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800',
     createdAt: new Date()
   },
   {
     id: '4',
     title: 'Professional Headshot',
-    category: 'Portrait',
+    category: 'portrait',
     imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
     createdAt: new Date()
   },
   {
     id: '5',
     title: 'Family Portrait Session',
-    category: 'Portrait',
+    category: 'portrait',
     imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800',
     createdAt: new Date()
   },
   {
     id: '6',
     title: 'Senior Portrait',
-    category: 'Portrait',
+    category: 'portrait',
     imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800',
     createdAt: new Date()
   },
   {
     id: '7',
     title: 'Corporate Event Coverage',
-    category: 'Events',
+    category: 'event',
     imageUrl: 'https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=800',
     createdAt: new Date()
   },
   {
     id: '8',
     title: 'Birthday Celebration',
-    category: 'Events',
+    category: 'event',
     imageUrl: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800',
     createdAt: new Date()
   },
   {
     id: '9',
     title: 'Conference Photography',
-    category: 'Events',
+    category: 'event',
     imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
     createdAt: new Date()
   },
   {
     id: '10',
     title: 'Studio Fashion Shoot',
-    category: 'Studio',
+    category: 'studio',
     imageUrl: 'https://images.unsplash.com/photo-1492681290082-e932832941e6?w=800',
     createdAt: new Date()
   },
   {
     id: '11',
     title: 'Product Photography',
-    category: 'Studio',
+    category: 'studio',
     imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800',
     createdAt: new Date()
   },
   {
     id: '12',
     title: 'Beauty Portrait',
-    category: 'Studio',
+    category: 'studio',
     imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800',
     createdAt: new Date()
   }
@@ -99,7 +101,7 @@ const Gallery = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const categories = ['All', 'Wedding', 'Portrait', 'Events', 'Studio'];
+  const categories = ['All', 'wedding', 'portrait', 'event', 'studio'];
 
   useEffect(() => {
     fetchPhotos();
@@ -109,51 +111,51 @@ const Gallery = () => {
     filterPhotos();
   }, [selectedCategory, photos]);
 
-  const fetchPhotos = async () => {
+  const fetchPhotos = () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Try to fetch from Firebase
-      try {
-        const allPhotos = await getAllPhotos();
-        if (allPhotos && allPhotos.length > 0) {
-          setPhotos(allPhotos);
-          setFilteredPhotos(allPhotos);
+      // Fetch from localStorage
+      const storedImages = localStorage.getItem(IMAGES_STORAGE_KEY);
+      
+      if (storedImages) {
+        const parsedImages = JSON.parse(storedImages);
+        if (parsedImages.length > 0) {
+          setPhotos(parsedImages);
+          setFilteredPhotos(parsedImages);
         } else {
-          // Use sample photos if no photos in Firebase
+          // Use sample photos if no images uploaded
           setPhotos(SAMPLE_PHOTOS);
           setFilteredPhotos(SAMPLE_PHOTOS);
         }
-      } catch (firebaseError) {
-        // If Firebase not configured, use sample photos
-        console.log('Using sample photos (Firebase not configured)');
+      } else {
+        // Use sample photos if localStorage is empty
         setPhotos(SAMPLE_PHOTOS);
         setFilteredPhotos(SAMPLE_PHOTOS);
       }
     } catch (err) {
       console.error('Error fetching photos:', err);
       setError('Failed to load photos. Please try again later.');
+      // Fallback to sample photos
+      setPhotos(SAMPLE_PHOTOS);
+      setFilteredPhotos(SAMPLE_PHOTOS);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filterPhotos = async () => {
+  const filterPhotos = () => {
     if (selectedCategory === 'All') {
       setFilteredPhotos(photos);
     } else {
-      try {
-        const categoryPhotos = await getPhotosByCategory(selectedCategory);
-        setFilteredPhotos(categoryPhotos);
-      } catch (err) {
-        console.error('Error filtering photos:', err);
-        // Fallback to client-side filtering
-        const filtered = photos.filter(photo => photo.category === selectedCategory);
-        setFilteredPhotos(filtered);
-      }
+      const filtered = photos.filter(
+        photo => photo.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+      setFilteredPhotos(filtered);
     }
   };
+
 
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);

@@ -20,7 +20,7 @@ const Contact = () => {
           <div className="contact-layout">
             {/* Contact Information */}
             <div className="contact-info-section">
-              <h2>Kavya Photography and Studio</h2>
+              <h2>Kaviya Photography and Studio</h2>
               <p className="contact-intro">
                 Whether you have questions about our services, want to discuss your photography 
                 needs, or ready to book a session, we're here to help!
@@ -76,7 +76,7 @@ const Contact = () => {
                     <span className="social-name">Facebook</span>
                   </a>
                   <a 
-                    href="https://www.instagram.com" 
+                    href="https://www.instagram.com/kaviyaphotography2014" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="social-link instagram"
@@ -126,7 +126,7 @@ const Contact = () => {
                   directly on WhatsApp.
                 </p>
                 <a 
-                  href="https://wa.me/919003698316?text=Hi%20Kavya%20Photography!%20I'm%20interested%20in%20your%20services." 
+                  href="https://wa.me/919003698316?text=Hi%20Kaviya%20Photography!%20I'm%20interested%20in%20your%20services." 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="btn btn-whatsapp btn-block"

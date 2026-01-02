@@ -1,6 +1,7 @@
 // BookingForm Component - Form for session bookings
 import { useState } from 'react';
-import { createBooking } from '../firebase/firestoreService';
+import { saveBooking } from '../utils/bookings';
+import { sendBookingEmail } from '../utils/emailService';
 import '../styles/BookingForm.css';
 
 const BookingForm = () => {
@@ -99,8 +100,18 @@ const BookingForm = () => {
     setSubmitStatus(null);
 
     try {
-      // Submit booking to Firestore
-      await createBooking(formData);
+      // Save booking to localStorage
+      const saveResult = saveBooking(formData);
+      
+      if (!saveResult.success) {
+        throw new Error('Failed to save booking');
+      }
+
+      // Send email notification (non-blocking - won't fail if email fails)
+      sendBookingEmail(formData).catch(error => {
+        console.error('Email notification failed:', error);
+        // Booking is still saved even if email fails
+      });
       
       setSubmitStatus('success');
       
@@ -137,7 +148,7 @@ const BookingForm = () => {
           <div className="alert-icon">✓</div>
           <div>
             <h4>Booking Request Received!</h4>
-            <p>Thank you for choosing Kavya Photography. We'll contact you within 24 hours to confirm your session.</p>
+            <p>Thank you for choosing Kaviya Photography. We'll contact you within 24 hours to confirm your session.</p>
           </div>
           <button 
             className="alert-close"

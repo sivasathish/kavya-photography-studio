@@ -11,11 +11,10 @@ service firebase.storage {
     }
     
     function isAdmin() {
-      // Replace with your admin email addresses
+      // Replace with your actual admin email address
       return isSignedIn() && 
              request.auth.token.email in [
-               'admin@kavyaphotography.com',
-               'your-admin-email@example.com'
+               'kaviyamobiles81@gmail.com'  // Admin email
              ];
     }
     
@@ -26,6 +25,19 @@ service firebase.storage {
     function isSizeValid() {
       // Max file size: 10MB
       return request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // Gallery folder rules (used by admin dashboard)
+    match /gallery/{filename} {
+      // Anyone can read gallery images (for public display)
+      allow read: if true;
+      
+      // Only admins can upload images
+      // Must be an image and under 10MB
+      allow write: if isAdmin() && isImage() && isSizeValid();
+      
+      // Only admins can delete images
+      allow delete: if isAdmin();
     }
     
     // Photos folder rules

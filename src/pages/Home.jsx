@@ -1,49 +1,10 @@
 // Home Page Component
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getLatestPhotos } from '../firebase/firestoreService';
 import PhotoCard from '../components/PhotoCard';
 import '../styles/Home.css';
 
-// Sample photos for demo (fallback when Firebase is not configured)
-const SAMPLE_LATEST_PHOTOS = [
-  {
-    id: '1',
-    title: 'Beautiful Wedding Ceremony',
-    category: 'Wedding',
-    imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800'
-  },
-  {
-    id: '2',
-    title: 'Elegant Bride Portrait',
-    category: 'Wedding',
-    imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800'
-  },
-  {
-    id: '3',
-    title: 'Professional Headshot',
-    category: 'Portrait',
-    imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800'
-  },
-  {
-    id: '4',
-    title: 'Family Portrait',
-    category: 'Portrait',
-    imageUrl: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800'
-  },
-  {
-    id: '5',
-    title: 'Corporate Event',
-    category: 'Events',
-    imageUrl: 'https://images.unsplash.com/photo-1505236858219-8359eb29e329?w=800'
-  },
-  {
-    id: '6',
-    title: 'Studio Fashion',
-    category: 'Studio',
-    imageUrl: 'https://images.unsplash.com/photo-1492681290082-e932832941e6?w=800'
-  }
-];
+const IMAGES_STORAGE_KEY = 'kavya_gallery_images';
 
 const Home = () => {
   const [latestPhotos, setLatestPhotos] = useState([]);
@@ -58,19 +19,24 @@ const Home = () => {
     try {
       setIsLoading(true);
       
-      // Try to fetch from Firebase
-      try {
-        const photos = await getLatestPhotos(6);
-        if (photos && photos.length > 0) {
-          setLatestPhotos(photos);
+      // Fetch from localStorage
+      const storedImages = localStorage.getItem(IMAGES_STORAGE_KEY);
+      if (storedImages) {
+        const allImages = JSON.parse(storedImages);
+        // Filter only outdoor category images
+        const outdoorImages = allImages.filter(img => img.category === 'outdoor');
+        
+        if (outdoorImages.length > 0) {
+          // Get the 6 most recent outdoor images
+          const recentOutdoor = outdoorImages.slice(0, 6);
+          setLatestPhotos(recentOutdoor);
         } else {
-          // Use sample photos if no photos in Firebase
-          setLatestPhotos(SAMPLE_LATEST_PHOTOS);
+          // No outdoor images found
+          setLatestPhotos([]);
         }
-      } catch (firebaseError) {
-        // If Firebase not configured, use sample photos
-        console.log('Using sample photos (Firebase not configured)');
-        setLatestPhotos(SAMPLE_LATEST_PHOTOS);
+      } else {
+        // No images in localStorage
+        setLatestPhotos([]);
       }
     } catch (err) {
       console.error('Error fetching latest photos:', err);
@@ -87,7 +53,7 @@ const Home = () => {
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <h1 className="hero-title">
-            Kavya Photography and Studio
+            Kaviya Photography and Studio
           </h1>
           <p className="hero-subtitle">
             Capturing Life's Most Precious Moments
@@ -115,12 +81,12 @@ const Home = () => {
         <div className="container">
           <div className="about-content">
             <div className="about-text">
-              <h2>Welcome to Kavya Photography</h2>
+              <h2>Welcome to Kaviya Photography</h2>
               <p className="lead">
                 Where Every Moment Becomes a Timeless Memory
               </p>
               <p>
-                At Kavya Photography and Studio, we believe that every moment tells a story. 
+                At Kaviya Photography and Studio, we believe that every moment tells a story. 
                 With years of experience and a passion for capturing authentic emotions, we 
                 specialize in creating stunning visual narratives that you'll cherish forever.
               </p>
@@ -131,11 +97,11 @@ const Home = () => {
               </p>
               <div className="about-stats">
                 <div className="stat-item">
-                  <span className="stat-number">500+</span>
+                  <span className="stat-number">5000+</span>
                   <span className="stat-label">Happy Clients</span>
                 </div>
                 <div className="stat-item">
-                  <span className="stat-number">1000+</span>
+                  <span className="stat-number">7000+</span>
                   <span className="stat-label">Events Covered</span>
                 </div>
                 <div className="stat-item">
@@ -225,7 +191,7 @@ const Home = () => {
           ) : latestPhotos.length === 0 ? (
             <div className="empty-state">
               <span className="empty-icon">📷</span>
-              <p>No photos available yet. Check back soon!</p>
+              <p>No outdoor photos available yet. Upload outdoor category images from admin dashboard!</p>
             </div>
           ) : (
             <>

@@ -9,7 +9,7 @@ const Footer = () => {
       <div className="footer-container">
         <div className="footer-content">
           <div className="footer-section">
-            <h3>Kavya Photography and Studio</h3>
+            <h3>Kaviya Photography and Studio</h3>
             <p>Capturing your precious moments with passion and creativity</p>
           </div>
 
@@ -45,7 +45,7 @@ const Footer = () => {
                 📘
               </a>
               <a 
-                href="https://www.instagram.com" 
+                href="https://www.instagram.com/kaviyaphotography2014" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 aria-label="Instagram"
@@ -53,7 +53,7 @@ const Footer = () => {
                 📷
               </a>
               <a 
-                href="https://wa.me/1234567890" 
+                href="https://wa.me/919003698316" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
@@ -71,7 +71,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; {currentYear} Kavya Photography and Studio. All rights reserved.</p>
+          <p>&copy; {currentYear} Kaviya Photography and Studio. All rights reserved.</p>
           <p>Made with ❤️ for capturing beautiful memories</p>
         </div>
       </div>

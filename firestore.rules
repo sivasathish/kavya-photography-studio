@@ -11,17 +11,15 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      // Replace with your admin email addresses
-      // You can also use custom claims or check against an 'admins' collection
+      // Replace with your actual admin email address
       return isSignedIn() && 
              request.auth.token.email in [
-               'admin@kavyaphotography.com',
-               'your-admin-email@example.com'
+               'kaviyamobiles81@gmail.com'  // Admin email
              ];
     }
     
-    // Photos Collection Rules
-    match /photos/{photoId} {
+    // Gallery Collection Rules
+    match /gallery/{photoId} {
       // Anyone can read photos (public gallery)
       allow read: if true;
       
