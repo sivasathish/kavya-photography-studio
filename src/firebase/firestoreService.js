@@ -8,6 +8,7 @@ import {
   getDocs,
   getDoc,
   doc,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -28,6 +29,12 @@ import { db, storage } from './firebaseConfig';
  */
 export const getAllPhotos = async () => {
   try {
+    // Check if Firebase is configured
+    if (!db) {
+      console.warn('Firebase not configured, returning empty array');
+      return [];
+    }
+    
     const photosRef = collection(db, 'photos');
     const q = query(photosRef, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
@@ -43,7 +50,7 @@ export const getAllPhotos = async () => {
     return photos;
   } catch (error) {
     console.error('Error fetching photos:', error);
-    throw error;
+    return []; // Return empty array instead of throwing
   }
 };
 
@@ -233,6 +240,157 @@ export const getBookingById = async (bookingId) => {
     }
   } catch (error) {
     console.error('Error fetching booking:', error);
+    throw error;
+  }
+};
+
+// ============================================
+// COMMENTS AND REVIEWS COLLECTION OPERATIONS
+// ============================================
+
+/**
+ * Get all comments for a specific photo
+ * @param {string} photoId - Photo ID to fetch comments for
+ * @returns {Promise<Array>} Array of comment objects
+ */
+export const getPhotoComments = async (photoId) => {
+  try {
+    // Check if Firebase is configured
+    if (!db) {
+      console.warn('Firebase not configured');
+      return [];
+    }
+    
+    const commentsRef = collection(db, 'comments');
+    const q = query(
+      commentsRef,
+      where('photoId', '==', photoId),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const comments = [];
+    querySnapshot.forEach((doc) => {
+      comments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    return comments;
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    return []; // Return empty array instead of throwing
+  }
+};
+
+/**
+ * Add a comment/review to a photo
+ * @// Check if Firebase is configured
+    if (!db) {
+      throw new Error('Firebase not configured. Please set up Firebase to add comments.');
+    }
+    
+    param {string} photoId - Photo ID to add comment to
+ * @param {Object} commentData - Comment data (name, email, comment, rating)
+ * @returns {Promise<Object>} Created comment with ID
+ */
+export const addPhotoComment = async (photoId, commentData) => {
+  try {
+    const commentsRef = collection(db, 'comments');
+    
+    const newComment = {
+      photoId: photoId,
+      name: commentData.name,
+      email: commentData.email || '',
+      comment: commentData.comment,
+      rating: commentData.rating || 5,
+      approved: true, // Auto-approve for now
+      createdAt: serverTimestamp()
+    };
+    
+    const docRef = await addDoc(commentsRef, newComment);
+    
+    return {
+      id: docRef.id,
+      ...newComment,
+      createdAt: new Date() // Return local time for immediate display
+    };
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a comment (Admin only)
+ * @param {string} commentId - Comment document ID
+ * @returns {Promise<void>}
+ */
+export const deletePhotoComment = async (commentId) => {
+  try {
+    const commentRef = doc(db, 'comments', commentId);
+    await deleteDoc(commentRef);
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get comment count for a photo
+ * @param {string} photoId - Photo ID
+ * @returns {Promise<number>} Number of comments
+ */
+export const getCommentCount = async (photoId) => {
+  try {
+    const comments = await getPhotoComments(photoId);
+    return comments.length;
+  } catch (error) {
+    console.error('Error getting comment count:', error);
+    return 0;
+  }
+};
+
+/**
+ * Get average rating for a photo
+ * @param {string} photoId - Photo ID
+ * @returns {Promise<number>} Average rating (0 if no ratings)
+ */
+export const getAverageRating = async (photoId) => {
+  try {
+    const comments = await getPhotoComments(photoId);
+    if (comments.length === 0) return 0;
+    
+    const sum = comments.reduce((acc, comment) => acc + (comment.rating || 0), 0);
+    return parseFloat((sum / comments.length).toFixed(1));
+  } catch (error) {
+    console.error('Error getting average rating:', error);
+    return 0;
+  }
+};
+
+/**
+ * Get all comments across all photos (for admin view)
+ * @returns {Promise<Array>} Array of all comments
+ */
+export const getAllCommentsFlat = async () => {
+  try {
+    const commentsRef = collection(db, 'comments');
+    const q = query(commentsRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const comments = [];
+    querySnapshot.forEach((doc) => {
+      comments.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    return comments;
+  } catch (error) {
+    console.error('Error fetching all comments:', error);
     throw error;
   }
 };

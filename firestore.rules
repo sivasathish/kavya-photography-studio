@@ -18,13 +18,25 @@ service cloud.firestore {
              ];
     }
     
-    // Gallery Collection Rules
-    match /gallery/{photoId} {
+    // Photos Collection Rules (formerly gallery)
+    match /photos/{photoId} {
       // Anyone can read photos (public gallery)
       allow read: if true;
       
       // Only admins can create, update, or delete photos
       allow create, update, delete: if isAdmin();
+    }
+    
+    // Comments Collection Rules (NEW - for reviews and ratings)
+    match /comments/{commentId} {
+      // Anyone can read comments (public reviews)
+      allow read: if true;
+      
+      // Anyone can create comments (public can add reviews)
+      allow create: if true;
+      
+      // Only admins can update or delete comments (moderation)
+      allow update, delete: if isAdmin();
     }
     
     // Bookings Collection Rules

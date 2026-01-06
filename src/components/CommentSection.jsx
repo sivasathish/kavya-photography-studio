@@ -12,17 +12,36 @@ function CommentSection({ photoId, photoTitle }) {
     rating: 5
   });
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [commentCount, setCommentCount] = useState(0);
+  const [avgRating, setAvgRating] = useState(0);
 
   useEffect(() => {
     loadComments();
   }, [photoId]);
 
-  const loadComments = () => {
-    const photoComments = getPhotoComments(photoId);
-    setComments(photoComments);
+  const loadComments = async () => {
+    try {
+      setLoading(true);
+      const photoComments = await getPhotoComments(photoId);
+      setComments(photoComments);
+      setCommentCount(photoComments.length);
+      
+      // Calculate average rating
+      if (photoComments.length > 0) {
+        const sum = photoComments.reduce((acc, comment) => acc + (comment.rating || 0), 0);
+        setAvgRating(parseFloat((sum / photoComments.length).toFixed(1)));
+      } else {
+        setAvgRating(0);
+      }
+    } catch (error) {
+      console.error('Error loading comments:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.name.trim() || !formData.comment.trim()) {
@@ -32,22 +51,36 @@ function CommentSection({ photoId, photoTitle }) {
 
     setSubmitting(true);
     
-    const result = addComment(photoId, formData);
-    
-    if (result.success) {
-      setFormData({ name: '', email: '', comment: '', rating: 5 });
-      setShowForm(false);
-      loadComments();
-      alert('Thank you for your review!');
-    } else {
+    try {
+      const result = await addComment(photoId, formData);
+      
+      if (result.success) {
+        setFormData({ name: '', email: '', comment: '', rating: 5 });
+        setShowForm(false);
+        await loadComments();
+        alert('Thank you for your review!');
+      } else {
+        alert('Failed to add comment. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
       alert('Failed to add comment. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-    
-    setSubmitting(false);
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    // Handle Firestore Timestamp or ISO string
+    let date;
+    if (dateString && typeof dateString === 'object' && dateString.toDate) {
+      // Firestore Timestamp
+      date = dateString.toDate();
+    } else {
+      // ISO string or Date object
+      date = new Date(dateString);
+    }
+    
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -68,9 +101,6 @@ function CommentSection({ photoId, photoTitle }) {
       </div>
     );
   };
-
-  const commentCount = getCommentCount(photoId);
-  const avgRating = getAverageRating(photoId);
 
   return (
     <div className="comment-section">
@@ -153,7 +183,9 @@ function CommentSection({ photoId, photoTitle }) {
       )}
 
       <div className="comments-list">
-        {comments.length === 0 ? (
+        {loading ? (
+          <p className="loading-comments">Loading reviews...</p>
+        ) : comments.length === 0 ? (
           <p className="no-comments">No reviews yet. Be the first to review!</p>
         ) : (
           comments.map(comment => (

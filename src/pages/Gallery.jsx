@@ -1,12 +1,10 @@
 // Gallery Page Component - Display all photos with category filter
 import { useState, useEffect } from 'react';
 import PhotoCard from '../components/PhotoCard';
+import { getAllPhotos } from '../firebase/firestoreService';
 import '../styles/Gallery.css';
 
-// LocalStorage key for images
-const IMAGES_STORAGE_KEY = 'kavya_gallery_images';
-
-// Sample photos data (fallback when no images uploaded)
+// Sample photos data (fallback when Firebase is not configured or no images uploaded)
 const SAMPLE_PHOTOS = [
   {
     id: '1',
@@ -111,33 +109,27 @@ const Gallery = () => {
     filterPhotos();
   }, [selectedCategory, photos]);
 
-  const fetchPhotos = () => {
+  const fetchPhotos = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Fetch from localStorage
-      const storedImages = localStorage.getItem(IMAGES_STORAGE_KEY);
+      // Fetch from Firestore
+      const firestorePhotos = await getAllPhotos();
       
-      if (storedImages) {
-        const parsedImages = JSON.parse(storedImages);
-        if (parsedImages.length > 0) {
-          setPhotos(parsedImages);
-          setFilteredPhotos(parsedImages);
-        } else {
-          // Use sample photos if no images uploaded
-          setPhotos(SAMPLE_PHOTOS);
-          setFilteredPhotos(SAMPLE_PHOTOS);
-        }
+      if (firestorePhotos && firestorePhotos.length > 0) {
+        setPhotos(firestorePhotos);
+        setFilteredPhotos(firestorePhotos);
       } else {
-        // Use sample photos if localStorage is empty
+        // Use sample photos if Firebase not configured or no images uploaded
+        console.log('Using sample photos as fallback');
         setPhotos(SAMPLE_PHOTOS);
         setFilteredPhotos(SAMPLE_PHOTOS);
       }
     } catch (err) {
       console.error('Error fetching photos:', err);
-      setError('Failed to load photos. Please try again later.');
-      // Fallback to sample photos
+      // Use sample photos as fallback instead of showing error
+      console.log('Using sample photos due to error');
       setPhotos(SAMPLE_PHOTOS);
       setFilteredPhotos(SAMPLE_PHOTOS);
     } finally {
