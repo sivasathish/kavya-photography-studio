@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-box">
+        <h1>🔥 Firebase Connection Test</h1>
+        <p>This page will test your Firebase configuration</p>
+        
+        <div id="results"></div>
+        
+        <button onclick="testFirebase()">Test Firebase Connection</button>
+        <button onclick="testStorage()">Test Storage</button>
+        <button onclick="testFirestore()">Test Firestore</button>
+    </div>
+
+    <script type="module">
+        import { db, storage, auth } from './src/firebase/firebaseConfig.js';
+        import { getAllPhotos } from './src/firebase/firestoreService.js';
+
+        window.testFirebase = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Testing Firebase Configuration...</h3>';
+            
+            let html = '';
+            
+            // Test Firebase initialization
+            if (db && storage && auth) {
+                html += '<div class="status success">✅ Firebase initialized successfully</div>';
+                html += `<pre>Project ID: ${db.app.options.projectId}\nStorage Bucket: ${storage.app.options.storageBucket}</pre>`;
+            } else {
+                html += '<div class="status error">❌ Firebase not initialized properly</div>';
+                if (!db) html += '<div class="status error">Firestore (db) is null</div>';
+                if (!storage) html += '<div class="status error">Storage is null</div>';
+                if (!auth) html += '<div class="status error">Auth is null</div>';
+            }
+            
+            results.innerHTML = html;
+        };
+
+        window.testStorage = function() {
+            const results = document.getElementById('results');
+            
+            if (!storage) {
+                results.innerHTML = '<div class="status error">❌ Firebase Storage not initialized</div>';
+                return;
+            }
+            
+            results.innerHTML = `
+                <div class="status success">✅ Firebase Storage is initialized</div>
+                <pre>Storage Bucket: ${storage.app.options.storageBucket}
+Storage URL: gs://${storage.app.options.storageBucket}</pre>
+                <div class="status warning">⚠️ To test upload/delete, you need to be logged in as admin</div>
+            `;
+        };
+
+        window.testFirestore = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="status warning">🔄 Testing Firestore connection...</div>';
+            
+            try {
+                const photos = await getAllPhotos();
+                results.innerHTML = `
+                    <div class="status success">✅ Firestore connection successful!</div>
+                    <pre>Photos in database: ${photos.length}</pre>
+                    ${photos.length > 0 ? `<pre>${JSON.stringify(photos[0], null, 2)}</pre>` : '<p>No photos uploaded yet</p>'}
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="status error">❌ Firestore connection failed</div>
+                    <pre>Error: ${error.message}</pre>
+                `;
+            }
+        };
+
+        // Auto-run test on load
+        setTimeout(() => window.testFirebase(), 500);
+    </script>
+</body>
+</html>

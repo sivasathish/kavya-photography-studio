@@ -22,32 +22,40 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
     
+    function isVideo() {
+      return request.resource.contentType.matches('video/.*');
+    }
+    
+    function isImageOrVideo() {
+      return isImage() || isVideo();
+    }
+    
     function isSizeValid() {
-      // Max file size: 10MB
-      return request.resource.size < 10 * 1024 * 1024;
+      // Max file size: 50MB (increased for video support)
+      return request.resource.size < 50 * 1024 * 1024;
     }
     
     // Gallery folder rules (used by admin dashboard)
     match /gallery/{filename} {
-      // Anyone can read gallery images (for public display)
+      // Anyone can read gallery images/videos (for public display)
       allow read: if true;
       
-      // Only admins can upload images
-      // Must be an image and under 10MB
-      allow write: if isAdmin() && isImage() && isSizeValid();
+      // Only admins can upload images or videos
+      // Must be an image/video and under 50MB
+      allow write: if isAdmin() && isImageOrVideo() && isSizeValid();
       
-      // Only admins can delete images
+      // Only admins can delete
       allow delete: if isAdmin();
     }
     
     // Photos folder rules
     match /photos/{filename} {
-      // Anyone can read photos (for public display)
+      // Anyone can read photos/videos (for public display)
       allow read: if true;
       
-      // Only admins can upload photos
-      // Must be an image and under 10MB
-      allow write: if isAdmin() && isImage() && isSizeValid();
+      // Only admins can upload
+      // Must be an image/video and under 50MB
+      allow write: if isAdmin() && isImageOrVideo() && isSizeValid();
       
       // Only admins can delete photos
       allow delete: if isAdmin();

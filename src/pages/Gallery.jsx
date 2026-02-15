@@ -114,24 +114,15 @@ const Gallery = () => {
       setIsLoading(true);
       setError(null);
       
-      // Fetch from Firestore
+      // Fetch from Firebase Firestore only
       const firestorePhotos = await getAllPhotos();
-      
-      if (firestorePhotos && firestorePhotos.length > 0) {
-        setPhotos(firestorePhotos);
-        setFilteredPhotos(firestorePhotos);
-      } else {
-        // Use sample photos if Firebase not configured or no images uploaded
-        console.log('Using sample photos as fallback');
-        setPhotos(SAMPLE_PHOTOS);
-        setFilteredPhotos(SAMPLE_PHOTOS);
-      }
+      setPhotos(firestorePhotos);
+      setFilteredPhotos(firestorePhotos);
     } catch (err) {
       console.error('Error fetching photos:', err);
-      // Use sample photos as fallback instead of showing error
-      console.log('Using sample photos due to error');
-      setPhotos(SAMPLE_PHOTOS);
-      setFilteredPhotos(SAMPLE_PHOTOS);
+      setError('Failed to load gallery. Please check your Firebase configuration.');
+      setPhotos([]);
+      setFilteredPhotos([]);
     } finally {
       setIsLoading(false);
     }
@@ -180,7 +171,7 @@ const Gallery = () => {
             ))}
           </div>
           <div className="gallery-count">
-            {filteredPhotos.length} {filteredPhotos.length === 1 ? 'Photo' : 'Photos'}
+            {filteredPhotos.length} {filteredPhotos.length === 1 ? 'item' : 'items'}
           </div>
         </div>
       </section>
@@ -204,11 +195,11 @@ const Gallery = () => {
           ) : filteredPhotos.length === 0 ? (
             <div className="empty-state">
               <span className="empty-icon">📷</span>
-              <h3>No Photos Found</h3>
+              <h3>No Items Found</h3>
               <p>
                 {selectedCategory === 'All' 
-                  ? 'No photos available yet. Check back soon!' 
-                  : `No photos found in the ${selectedCategory} category.`}
+                  ? 'No photos or videos uploaded yet. Admin can upload from the dashboard!' 
+                  : `No items found in the ${selectedCategory} category.`}
               </p>
               {selectedCategory !== 'All' && (
                 <button 

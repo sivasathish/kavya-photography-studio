@@ -1,0 +1,13 @@
+
+RUN
+===
+
+npm run dev
+
+
+
+Storage Bucket: kavya-photography-studio.firebasestorage.app
+Storage URL   : gs://kavya-photography-studio.firebasestorage.app
+
+
+

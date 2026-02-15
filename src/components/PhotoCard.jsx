@@ -81,7 +81,7 @@ const PhotoCard = ({ photo }) => {
   return (
     <>
       <div className="photo-card">
-        {isLoading && (
+        {isLoading && !photo.fileType && (
           <div className="photo-card-skeleton">
             <div className="skeleton-shimmer"></div>
           </div>
@@ -90,18 +90,28 @@ const PhotoCard = ({ photo }) => {
         {hasError ? (
           <div className="photo-card-error">
             <span>📷</span>
-            <p>Image unavailable</p>
+            <p>Media unavailable</p>
           </div>
         ) : (
           <>
-            <img
-              src={photo.imageUrl}
-              alt={photo.title}
-              className={`photo-card-image ${isLoading ? 'loading' : 'loaded'}`}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              loading="lazy"
-            />
+            {photo.fileType === 'video' ? (
+              <video
+                src={photo.imageUrl}
+                className="photo-card-video"
+                controls
+                onLoadedData={handleImageLoad}
+                onError={handleImageError}
+              />
+            ) : (
+              <img
+                src={photo.imageUrl}
+                alt={photo.title}
+                className={`photo-card-image ${isLoading ? 'loading' : 'loaded'}`}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                loading="lazy"
+              />
+            )}
             <div className="photo-card-overlay">
               <h3 className="photo-card-title">{photo.title}</h3>
               <span className="photo-card-category">{photo.category}</span>
@@ -134,7 +144,11 @@ const PhotoCard = ({ photo }) => {
               ✕
             </button>
             <div className="modal-image-preview">
-              <img src={photo.imageUrl} alt={photo.title} />
+              {photo.fileType === 'video' ? (
+                <video src={photo.imageUrl} controls style={{width: '100%', maxHeight: '400px'}} />
+              ) : (
+                <img src={photo.imageUrl} alt={photo.title} />
+              )}
               <h2>{photo.title}</h2>
             </div>
             <CommentSection photoId={photo.id} photoTitle={photo.title} />

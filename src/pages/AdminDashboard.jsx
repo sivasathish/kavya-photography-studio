@@ -3,11 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { logout, getCurrentUser } from '../utils/auth';
 import { getAllCommentsFlat, deleteComment, getCommentCount } from '../utils/comments';
 import { getBookings, deleteBooking, updateBookingStatus, getBookingStats } from '../utils/bookings';
+import { getAllPhotos, addPhoto, deletePhoto, uploadImage } from '../firebase/firestoreService';
 import '../styles/AdminDashboard.css';
-
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-const IMAGES_STORAGE_KEY = 'kavya_gallery_images';
 
 function AdminDashboard() {
   const [uploading, setUploading] = useState(false);
@@ -15,6 +12,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [fileType, setFileType] = useState(null); // 'image' or 'video'
   const [imageData, setImageData] = useState({
     title: '',
     category: 'wedding',
@@ -33,15 +31,15 @@ function AdminDashboard() {
     fetchBookings();
   }, []);
 
-  const fetchImages = () => {
+  const fetchImages = async () => {
     try {
-      const storedImages = localStorage.getItem(IMAGES_STORAGE_KEY);
-      if (storedImages) {
-        setImages(JSON.parse(storedImages));
-      }
-      setLoading(false);
+      setLoading(true);
+      const photos = await getAllPhotos();
+      setImages(photos);
     } catch (error) {
       console.error('Error fetching images:', error);
+      alert('Error loading images from Firebase');
+    } finally {
       setLoading(false);
     }
   };
@@ -57,21 +55,31 @@ function AdminDashboard() {
     setBookingStats(getBookingStats());
   };
 
-  const saveImagesToStorage = (imageList) => {
-    localStorage.setItem(IMAGES_STORAGE_KEY, JSON.stringify(imageList));
-  };
-
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      alert('Please select a valid image file');
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        setFileType('image');
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith('video/')) {
+        setFileType('video');
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select a valid image or video file');
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setFileType(null);
+      }
     }
   };
 
@@ -79,81 +87,67 @@ function AdminDashboard() {
     e.preventDefault();
     
     if (!selectedFile) {
-      alert('Please select an image first');
+      alert(`Please select a ${fileType || 'file'} first`);
       return;
     }
 
     if (!imageData.title.trim()) {
-      alert('Please enter an image title');
+      alert('Please enter a title');
       return;
     }
 
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-      formData.append('folder', 'kaviya_gallery');
-
-      const cloudinaryResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: 'POST',
-          body: formData
-        }
-      );
-
-      if (!cloudinaryResponse.ok) {
-        throw new Error('Failed to upload image to Cloudinary');
-      }
-
-      const cloudinaryData = await cloudinaryResponse.json();
+      // Upload file to Firebase Storage
+      const uploadResult = await uploadImage(selectedFile, 'gallery');
+      
       const currentUser = getCurrentUser();
 
-      const newImage = {
-        id: Date.now().toString(),
+      // Create photo document in Firestore
+      const photoData = {
         title: imageData.title,
         category: imageData.category,
         description: imageData.description,
-        imageUrl: cloudinaryData.secure_url,
-        publicId: cloudinaryData.public_id,
-        uploadedAt: new Date().toISOString(),
+        imageUrl: uploadResult.downloadURL,
+        storagePath: uploadResult.fullPath,
+        fileType: fileType, // 'image' or 'video'
         uploadedBy: currentUser?.username || 'admin'
       };
 
-      const updatedImages = [newImage, ...images];
-      saveImagesToStorage(updatedImages);
-      setImages(updatedImages);
+      await addPhoto(photoData);
 
+      // Refresh the gallery
+      await fetchImages();
+
+      // Reset form
       setSelectedFile(null);
       setPreviewUrl(null);
+      setFileType(null);
       setImageData({ title: '', category: 'wedding', description: '' });
       document.getElementById('file-input').value = '';
       
-      alert('Image uploaded successfully!');
+      alert(`${fileType === 'video' ? 'Video' : 'Image'} uploaded successfully!`);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Error uploading image. Please try again.');
+      alert('Error uploading file. Please check your Firebase configuration and try again.');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleDelete = (image) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) {
+  const handleDelete = async (image) => {
+    if (!window.confirm(`Are you sure you want to delete "${image.title}"?`)) {
       return;
     }
 
     try {
-      const updatedImages = images.filter(img => img.id !== image.id);
-      saveImagesToStorage(updatedImages);
-      setImages(updatedImages);
-      
-      alert('Image deleted successfully!');
+      await deletePhoto(image.id, image.storagePath);
+      await fetchImages();
+      alert('Deleted successfully!');
     } catch (error) {
       console.error('Delete error:', error);
-      alert('Error deleting image. Please try again.');
+      alert('Error deleting. Please try again.');
     }
   };
 
@@ -244,24 +238,29 @@ function AdminDashboard() {
 
       <div className="dashboard-content">
         <section className="upload-section">
-          <h2>Upload New Image</h2>
+          <h2>Upload New Image or Video</h2>
           <form onSubmit={handleUpload} className="upload-form">
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="file-input">Select Image *</label>
+                <label htmlFor="file-input">Select Image or Video *</label>
                 <input
                   type="file"
                   id="file-input"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   onChange={handleFileSelect}
                   required
                 />
                 {selectedFile && (
-                  <p className="file-name">Selected: {selectedFile.name}</p>
+                  <p className="file-name">Selected: {selectedFile.name} ({fileType})</p>
                 )}
-                {previewUrl && (
+                {previewUrl && fileType === 'image' && (
                   <div className="image-preview">
                     <img src={previewUrl} alt="Preview" style={{maxWidth: '200px', marginTop: '10px'}} />
+                  </div>
+                )}
+                {previewUrl && fileType === 'video' && (
+                  <div className="video-preview">
+                    <video src={previewUrl} controls style={{maxWidth: '300px', marginTop: '10px'}} />
                   </div>
                 )}
               </div>
@@ -308,13 +307,13 @@ function AdminDashboard() {
             </div>
 
             <button type="submit" className="upload-btn" disabled={uploading}>
-              {uploading ? 'Uploading...' : 'Upload Image'}
+              {uploading ? 'Uploading...' : `Upload ${fileType === 'video' ? 'Video' : fileType === 'image' ? 'Image' : 'File'}`}
             </button>
           </form>
         </section>
 
         <section className="gallery-section">
-          <h2>Manage Gallery ({images.length} images)</h2>
+          <h2>Manage Gallery ({images.length} items)</h2>
           
           {loading ? (
             <p className="loading-text">Loading images...</p>

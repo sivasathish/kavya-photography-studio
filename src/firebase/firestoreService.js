@@ -16,7 +16,7 @@ import {
   Timestamp,
   serverTimestamp
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from './firebaseConfig';
 
 // ============================================
@@ -135,13 +135,17 @@ export const addPhoto = async (photoData) => {
 };
 
 /**
- * Upload image to Firebase Storage
- * @param {File} file - Image file to upload
+ * Upload image or video to Firebase Storage
+ * @param {File} file - Image or video file to upload
  * @param {string} folder - Storage folder path
- * @returns {Promise<string>} Download URL of uploaded image
+ * @returns {Promise<Object>} Object with downloadURL and fullPath
  */
 export const uploadImage = async (file, folder = 'photos') => {
   try {
+    if (!storage) {
+      throw new Error('Firebase Storage not configured');
+    }
+    
     const timestamp = Date.now();
     const fileName = `${timestamp}_${file.name}`;
     const storageRef = ref(storage, `${folder}/${fileName}`);
@@ -149,9 +153,57 @@ export const uploadImage = async (file, folder = 'photos') => {
     const snapshot = await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(snapshot.ref);
     
-    return downloadURL;
+    return {
+      downloadURL,
+      fullPath: snapshot.ref.fullPath
+    };
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete file from Firebase Storage
+ * @param {string} filePath - Full path of file in storage
+ * @returns {Promise<void>}
+ */
+export const deleteFromStorage = async (filePath) => {
+  try {
+    if (!storage) {
+      throw new Error('Firebase Storage not configured');
+    }
+    
+    const fileRef = ref(storage, filePath);
+    await deleteObject(fileRef);
+  } catch (error) {
+    console.error('Error deleting from storage:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a photo from both Firestore and Storage (Admin only)
+ * @param {string} photoId - Photo document ID
+ * @param {string} storagePath - Full path of file in storage
+ * @returns {Promise<void>}
+ */
+export const deletePhoto = async (photoId, storagePath) => {
+  try {
+    if (!db) {
+      throw new Error('Firebase not configured');
+    }
+    
+    // Delete from Firestore
+    const photoRef = doc(db, 'photos', photoId);
+    await deleteDoc(photoRef);
+    
+    // Delete from Storage if path provided
+    if (storagePath) {
+      await deleteFromStorage(storagePath);
+    }
+  } catch (error) {
+    console.error('Error deleting photo:', error);
     throw error;
   }
 };
