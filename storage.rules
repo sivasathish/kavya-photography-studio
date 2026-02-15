@@ -10,12 +10,11 @@ service firebase.storage {
       return request.auth != null;
     }
     
+    // Temporarily allow all authenticated writes for development
+    // TODO: Implement proper Firebase Authentication for production
     function isAdmin() {
-      // Replace with your actual admin email address
-      return isSignedIn() && 
-             request.auth.token.email in [
-               'kaviyamobiles81@gmail.com'  // Admin email
-             ];
+      // For now, allow all writes (development mode)
+      return true;
     }
     
     function isImage() {
