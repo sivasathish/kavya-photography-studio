@@ -1,10 +1,19 @@
 import { Navigate } from 'react-router-dom';
-import { isAuthenticated } from '../utils/auth';
+import { useAuthState } from '../hooks/useAuthState';
 
 function ProtectedRoute({ children }) {
-  const authenticated = isAuthenticated();
+  const { user, loading } = useAuthState();
 
-  if (!authenticated) {
+  // Wait for Firebase to resolve the auth state before redirecting
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <p>Verifying session...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Navigate to="/admin/login" replace />;
   }
 

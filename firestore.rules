@@ -10,11 +10,10 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Temporarily allow all writes for development
-    // TODO: Implement proper Firebase Authentication for production
+    // Admin = any authenticated Firebase user
+    // Create your admin account in Firebase Console → Authentication → Users
     function isAdmin() {
-      // For now, allow all writes (development mode)
-      return true;
+      return isSignedIn();
     }
     
     // Photos Collection Rules (formerly gallery)

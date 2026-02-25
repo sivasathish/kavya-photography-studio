@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout, getCurrentUser } from '../utils/auth';
-import { getAllCommentsFlat, deleteComment, getCommentCount } from '../utils/comments';
+import { getAllCommentsFlat, deleteComment } from '../utils/comments';
 import { getBookings, deleteBooking, updateBookingStatus, getBookingStats } from '../utils/bookings';
 import { getAllPhotos, addPhoto, deletePhoto, uploadImage } from '../firebase/firestoreService';
 import '../styles/AdminDashboard.css';
@@ -44,8 +44,8 @@ function AdminDashboard() {
     }
   };
 
-  const fetchComments = () => {
-    const comments = getAllCommentsFlat();
+  const fetchComments = async () => {
+    const comments = await getAllCommentsFlat();
     setAllComments(comments);
   };
 
@@ -151,12 +151,12 @@ function AdminDashboard() {
     }
   };
 
-  const handleDeleteComment = (photoId, commentId) => {
+  const handleDeleteComment = async (photoId, commentId) => {
     if (!window.confirm('Are you sure you want to delete this comment?')) {
       return;
     }
 
-    const result = deleteComment(photoId, commentId);
+    const result = await deleteComment(photoId, commentId);
     if (result.success) {
       fetchComments();
       alert('Comment deleted successfully!');
@@ -217,8 +217,8 @@ function AdminDashboard() {
     return photo ? photo.title : 'Unknown Photo';
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/admin/login');
   };
 
@@ -329,7 +329,7 @@ function AdminDashboard() {
                     <span className="category-badge">{image.category}</span>
                     {image.description && <p>{image.description}</p>}
                     <div className="image-stats">
-                      <span>�� {getCommentCount(image.id)} reviews</span>
+                      <span>💬 {allComments.filter(c => c.photoId === image.id).length} reviews</span>
                     </div>
                   </div>
                   <button 

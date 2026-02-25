@@ -61,6 +61,11 @@ export const getAllPhotos = async () => {
  */
 export const getPhotosByCategory = async (category) => {
   try {
+    if (!db) {
+      console.warn('Firebase not configured, returning empty array');
+      return [];
+    }
+
     const photosRef = collection(db, 'photos');
     const q = query(
       photosRef,
@@ -91,6 +96,11 @@ export const getPhotosByCategory = async (category) => {
  */
 export const getLatestPhotos = async (limitCount = 6) => {
   try {
+    if (!db) {
+      console.warn('Firebase not configured, returning empty array');
+      return [];
+    }
+
     const photosRef = collection(db, 'photos');
     const q = query(
       photosRef,
@@ -338,17 +348,16 @@ export const getPhotoComments = async (photoId) => {
 
 /**
  * Add a comment/review to a photo
- * @// Check if Firebase is configured
-    if (!db) {
-      throw new Error('Firebase not configured. Please set up Firebase to add comments.');
-    }
-    
-    param {string} photoId - Photo ID to add comment to
+ * @param {string} photoId - Photo ID to add comment to
  * @param {Object} commentData - Comment data (name, email, comment, rating)
  * @returns {Promise<Object>} Created comment with ID
  */
 export const addPhotoComment = async (photoId, commentData) => {
   try {
+    if (!db) {
+      throw new Error('Firebase not configured. Please set up Firebase to add comments.');
+    }
+
     const commentsRef = collection(db, 'comments');
     
     const newComment = {
