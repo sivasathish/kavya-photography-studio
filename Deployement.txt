@@ -1,0 +1,7 @@
+
+git add .
+git commit -m "Update bookings to use Firestore database"
+git push origin main
+
+
+

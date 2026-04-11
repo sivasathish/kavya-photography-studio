@@ -1,0 +1,20 @@
+
+Firebase Project creation...
+
+
+Project Name : kavya-studio
+
+
+Add App : kavya studio web
+
+Copy the config value and configure in code
+
+
+
+Gmail => kaviyamobiles81@gmail.com
+Password : Kaviya@2026
+
+
+
+
+

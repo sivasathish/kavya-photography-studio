@@ -306,6 +306,25 @@ export const getBookingById = async (bookingId) => {
   }
 };
 
+/**
+ * Delete a booking (Admin only)
+ * @param {string} bookingId - Booking document ID
+ * @returns {Promise<void>}
+ */
+export const deleteBooking = async (bookingId) => {
+  try {
+    if (!db) {
+      throw new Error('Firebase not configured');
+    }
+    
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await deleteDoc(bookingRef);
+  } catch (error) {
+    console.error('Error deleting booking:', error);
+    throw error;
+  }
+};
+
 // ============================================
 // COMMENTS AND REVIEWS COLLECTION OPERATIONS
 // ============================================

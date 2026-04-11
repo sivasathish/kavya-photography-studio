@@ -1,7 +1,6 @@
 // BookingForm Component - Form for session bookings
 import { useState } from 'react';
-import { saveBooking } from '../utils/bookings';
-import { sendBookingEmail } from '../utils/emailService';
+import { createBooking } from '../firebase/firestoreService';
 import '../styles/BookingForm.css';
 
 const BookingForm = () => {
@@ -100,18 +99,8 @@ const BookingForm = () => {
     setSubmitStatus(null);
 
     try {
-      // Save booking to localStorage
-      const saveResult = saveBooking(formData);
-      
-      if (!saveResult.success) {
-        throw new Error('Failed to save booking');
-      }
-
-      // Send email notification (non-blocking - won't fail if email fails)
-      sendBookingEmail(formData).catch(error => {
-        console.error('Email notification failed:', error);
-        // Booking is still saved even if email fails
-      });
+      // Save booking to Firestore database
+      await createBooking(formData);
       
       setSubmitStatus('success');
       

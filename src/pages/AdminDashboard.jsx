@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout, getCurrentUser } from '../utils/auth';
 import { getAllCommentsFlat, deleteComment } from '../utils/comments';
-import { getBookings, deleteBooking, updateBookingStatus, getBookingStats } from '../utils/bookings';
-import { getAllPhotos, addPhoto, deletePhoto, uploadImage } from '../firebase/firestoreService';
+import { getAllPhotos, addPhoto, deletePhoto, getAllBookings, deleteBooking as deleteBookingFirestore } from '../firebase/firestoreService';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload';
 import '../styles/AdminDashboard.css';
 
 function AdminDashboard() {
@@ -49,10 +49,24 @@ function AdminDashboard() {
     setAllComments(comments);
   };
 
-  const fetchBookings = () => {
-    const allBookings = getBookings();
-    setBookings(allBookings);
-    setBookingStats(getBookingStats());
+  const fetchBookings = async () => {
+    try {
+      const allBookings = await getAllBookings();
+      setBookings(allBookings);
+      
+      // Calculate stats
+      const stats = {
+        total: allBookings.length,
+        pending: allBookings.filter(b => b.status === 'pending').length,
+        confirmed: allBookings.filter(b => b.status === 'confirmed').length,
+        cancelled: allBookings.filter(b => b.status === 'cancelled').length
+      };
+      setBookingStats(stats);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      setBookings([]);
+      setBookingStats({ total: 0, pending: 0, confirmed: 0, cancelled: 0 });
+    }
   };
 
   const handleFileSelect = (e) => {
@@ -99,8 +113,8 @@ function AdminDashboard() {
     setUploading(true);
 
     try {
-      // Upload file to Firebase Storage
-      const uploadResult = await uploadImage(selectedFile, 'gallery');
+      // Upload file to Cloudinary
+      const uploadResult = await uploadToCloudinary(selectedFile);
       
       const currentUser = getCurrentUser();
 
@@ -110,9 +124,11 @@ function AdminDashboard() {
         category: imageData.category,
         description: imageData.description,
         imageUrl: uploadResult.downloadURL,
-        storagePath: uploadResult.fullPath,
+        cloudinaryId: uploadResult.publicId,
         fileType: fileType, // 'image' or 'video'
-        uploadedBy: currentUser?.username || 'admin'
+        uploadedBy: currentUser?.username || 'admin',
+        width: uploadResult.width,
+        height: uploadResult.height
       };
 
       await addPhoto(photoData);
@@ -130,7 +146,7 @@ function AdminDashboard() {
       alert(`${fileType === 'video' ? 'Video' : 'Image'} uploaded successfully!`);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Error uploading file. Please check your Firebase configuration and try again.');
+      alert(`Error uploading file: ${error.message || 'Please check your Cloudinary configuration and try again.'}`);
     } finally {
       setUploading(false);
     }
@@ -142,9 +158,11 @@ function AdminDashboard() {
     }
 
     try {
-      await deletePhoto(image.id, image.storagePath);
+      // Delete from Firestore only
+      // Note: Cloudinary files remain (manual deletion via dashboard if needed)
+      await deletePhoto(image.id, null);
       await fetchImages();
-      alert('Deleted successfully!');
+      alert('Photo deleted from gallery successfully!');
     } catch (error) {
       console.error('Delete error:', error);
       alert('Error deleting. Please try again.');
@@ -165,28 +183,25 @@ function AdminDashboard() {
     }
   };
 
-  const handleDeleteBooking = (bookingId) => {
+  const handleDeleteBooking = async (bookingId) => {
     if (!window.confirm('Are you sure you want to delete this booking?')) {
       return;
     }
 
-    const result = deleteBooking(bookingId);
-    if (result.success) {
-      fetchBookings();
+    try {
+      await deleteBookingFirestore(bookingId);
+      await fetchBookings();
       alert('Booking deleted successfully!');
-    } else {
+    } catch (error) {
+      console.error('Error deleting booking:', error);
       alert('Failed to delete booking.');
     }
   };
 
-  const handleUpdateBookingStatus = (bookingId, newStatus) => {
-    const result = updateBookingStatus(bookingId, newStatus);
-    if (result.success) {
-      fetchBookings();
-      alert(`Booking status updated to ${newStatus}!`);
-    } else {
-      alert('Failed to update booking status.');
-    }
+  const handleUpdateBookingStatus = async (bookingId, newStatus) => {
+    // Status update functionality - to be implemented in Firestore if needed
+    alert(`Status update feature coming soon! Selected status: ${newStatus}`);
+    // For now, bookings are stored but status updates require additional Firestore function
   };
 
   const formatDate = (dateString) => {
