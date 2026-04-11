@@ -345,8 +345,7 @@ export const getPhotoComments = async (photoId) => {
     const commentsRef = collection(db, 'comments');
     const q = query(
       commentsRef,
-      where('photoId', '==', photoId),
-      orderBy('createdAt', 'desc')
+      where('photoId', '==', photoId)
     );
     const querySnapshot = await getDocs(q);
     

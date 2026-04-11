@@ -24,7 +24,7 @@
   box-shadow: var(--shadow-sm);
   position: sticky;
   top: 70px;
-  z-index: var(--z-sticky);
+  z-index: 100;
 }
 
 .filter-buttons {

@@ -24,13 +24,21 @@ function CommentSection({ photoId, photoTitle }) {
     try {
       setLoading(true);
       const photoComments = await getPhotoComments(photoId);
-      setComments(photoComments);
-      setCommentCount(photoComments.length);
+      
+      // Sort comments by date (newest first) on client side
+      const sortedComments = photoComments.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return dateB - dateA; // Newest first
+      });
+      
+      setComments(sortedComments);
+      setCommentCount(sortedComments.length);
       
       // Calculate average rating
-      if (photoComments.length > 0) {
-        const sum = photoComments.reduce((acc, comment) => acc + (comment.rating || 0), 0);
-        setAvgRating(parseFloat((sum / photoComments.length).toFixed(1)));
+      if (sortedComments.length > 0) {
+        const sum = sortedComments.reduce((acc, comment) => acc + (comment.rating || 0), 0);
+        setAvgRating(parseFloat((sum / sortedComments.length).toFixed(1)));
       } else {
         setAvgRating(0);
       }

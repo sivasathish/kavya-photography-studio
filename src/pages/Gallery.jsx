@@ -99,7 +99,7 @@ const Gallery = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const categories = ['All', 'wedding', 'portrait', 'event', 'studio'];
+  const categories = ['All', 'wedding', 'portrait', 'event', 'studio', 'outdoor'];
 
   useEffect(() => {
     fetchPhotos();
